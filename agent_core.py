@@ -157,7 +157,3 @@ def run_agent_loop(task: str, max_iter: int = 15, on_step=None):
 
     raise RuntimeError(f"Hit max iterations ({max_iter})")
 
-
-
-if __name__ == "__main__":
-    run_agent_loop("Create a beautiful birthday wish page called index.html.")
