@@ -1,0 +1,14 @@
+[
+    {
+        "id": 1,
+        "title": "LeetCode",
+        "description": "Complete Daily Challenge",
+        "completed": true
+    },
+    {
+        "id": 2,
+        "title": "Daily Learnings",
+        "description": "Learn something new daily",
+        "completed": true
+    }
+]

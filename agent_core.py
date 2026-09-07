@@ -117,7 +117,7 @@ def run_agent_loop(task: str,system_prompt:str, max_iter: int = 50, on_step=None
     for _ in range(max_iter):
         print("THINKING...\n")
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="openai/gpt-oss-20b",
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",
