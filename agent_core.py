@@ -101,7 +101,7 @@ def run_agent_loop(task: str, max_iter: int = 15, on_step=None):
     ]
 
     for _ in range(max_iter):
-
+        print("THINKING...\n")
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=messages,
@@ -146,8 +146,6 @@ def run_agent_loop(task: str, max_iter: int = 15, on_step=None):
                 on_step(tool_name, args, result)
 
             print(f"\n[TOOL] {tool_name}")
-            print("Args:", args)
-            print("Result:", result)
 
             messages.append({
                 "role": "tool",
@@ -156,4 +154,3 @@ def run_agent_loop(task: str, max_iter: int = 15, on_step=None):
             })
 
     raise RuntimeError(f"Hit max iterations ({max_iter})")
-

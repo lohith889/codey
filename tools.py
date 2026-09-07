@@ -12,9 +12,11 @@ def _safe_path(rel_path:str)->Path:
     return candidate
 
 def read_file(rel_path:str)->str:
+    print("READING FILES...\n")
     return _safe_path(rel_path).read_text()
 
 def write_file(rel_path:str,content:str)->str:
+    print("CREATIN FILES...\n")
     path=_safe_path(rel_path)
     path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(content)
@@ -22,6 +24,7 @@ def write_file(rel_path:str,content:str)->str:
     return f"Wrote '{content}' to '{rel_path}'"
 
 def edit_file(rel_path:str,old_content:str,new_content:str)->str:
+    print("EDITING FILES...\n")
     path=_safe_path(rel_path)
     original=path.read_text()
     count=original.count(old_content)
@@ -39,6 +42,7 @@ def edit_file(rel_path:str,old_content:str,new_content:str)->str:
     return diff
 
 def list_dir(rel_path:str=".")->list:
+    print("LISTING FILES...\n")
     path=_safe_path(rel_path)
 
     return sorted(
