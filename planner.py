@@ -72,7 +72,6 @@ def generate_plan(task: str) -> dict:
           }
 
     )
-    print("STRUCTURING PLAN...\n")
     
     raw = response.choices[0].message.content
     return json.loads(raw)

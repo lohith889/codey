@@ -108,7 +108,7 @@ TOOL_FUNCTIONS = {
 }
 
 
-def run_agent_loop(task: str,system_prompt:str, max_iter: int = 20, on_step=None):
+def run_agent_loop(task: str,system_prompt:str, max_iter: int = 50, on_step=None):
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": task},

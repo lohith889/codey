@@ -3,6 +3,7 @@ from sandbox import run_sandbox
 
 def verify_and_iterate(test_command:list,maxretires:int=3,on_step=None)->dict:
     for attempt in range(maxretires):
+        print("\n SANDBOXING...")
         result=run_sandbox(test_command)
         if result['exit_code']==0:
             return {"status":"pass","attempts":attempt+1}
@@ -16,7 +17,7 @@ def verify_and_iterate(test_command:list,maxretires:int=3,on_step=None)->dict:
     Read the relevant file(s), diagnose the fialure, and fix the code.
     Do not change the tests themselves unless they are clearly wrong
     '''
-
+        print("\FIXING...")
         run_agent_loop(fix_task,CODING_SYSTEM_PROMPT,on_step=on_step)
 
     return {'status':'fail','attempts':maxretires}
