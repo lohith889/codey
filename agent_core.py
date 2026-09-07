@@ -15,11 +15,25 @@ client = OpenAI(
 CODING_SYSTEM_PROMPT = """
 You are a careful coding agent working inside a project directory.
 
-Rules:
-- Always read a file before editing it.
-- Use edit_file for small changes; use write_file only for new files.
-- Never assume a file's contents.
-- Explain errors before retrying.
+RULES:
+- You have access to tools: read_file, write_file, edit_file, list_dir
+- use these tools to interact with files
+- Do NOT generate code in your response - use write_file instead
+- For write_file, provide path and content as JSON
+- For edit_file, provide path, old_str, and new_str
+- For read_file, provide path only
+- Once task is over stop tool calling
+
+TOOL CALL FORMAT:
+When using a tool, provide the arguments in valid JSON format.
+Example: write_file({"path": "hello.py", "content": "print('Hello')"})
+
+RESPONSE FORMAT:
+- If you need to explain something, do it in the content field
+- Then use the tool calls to actually do the work
+- Never output raw code unless it's inside a tool call
+
+Always verify your changes by reading the file after editing.
 """
 
 
@@ -94,16 +108,16 @@ TOOL_FUNCTIONS = {
 }
 
 
-def run_agent_loop(task: str, max_iter: int = 15, on_step=None):
+def run_agent_loop(task: str,system_prompt:str, max_iter: int = 20, on_step=None):
     messages = [
-        {"role": "system", "content": CODING_SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": task},
     ]
 
     for _ in range(max_iter):
         print("THINKING...\n")
         response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
+            model="openai/gpt-oss-120b",
             messages=messages,
             tools=TOOLS,
             tool_choice="auto",
@@ -136,7 +150,7 @@ def run_agent_loop(task: str, max_iter: int = 15, on_step=None):
 
             tool_name = tool_call.function.name
             args = json.loads(tool_call.function.arguments)
-
+            print(f"\n[TOOL] {tool_name}")
             try:
                 result = TOOL_FUNCTIONS[tool_name](args)
             except Exception as exc:
@@ -145,11 +159,14 @@ def run_agent_loop(task: str, max_iter: int = 15, on_step=None):
             if on_step:
                 on_step(tool_name, args, result)
 
-            print(f"\n[TOOL] {tool_name}")
+            MAX_HISTORY = 8
+            if len(messages) > MAX_HISTORY:
+                messages = messages[:2] + messages[-6:]
 
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,
+                "name": tool_name,
                 "content": str(result),
             })
 

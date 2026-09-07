@@ -14,6 +14,7 @@ PLANNER_SYSTEM_PROMPT = """
 You turn a coding task into a short numbered plan.
 Breakdown the huge task into multiple units so acheiving the goal is efficient.
 Keep it to the smallest set of steps that accomplishes the task.
+Give proper condition to end the task so the agent stops tool calling repeatedly
 
 """
 steps_schema = {

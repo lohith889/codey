@@ -16,7 +16,7 @@ def read_file(rel_path:str)->str:
     return _safe_path(rel_path).read_text()
 
 def write_file(rel_path:str,content:str)->str:
-    print("CREATIN FILES...\n")
+    print("CREATING FILES...\n")
     path=_safe_path(rel_path)
     path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(content)
