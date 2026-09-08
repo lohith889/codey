@@ -1,9 +1,9 @@
 
 def main():
-    from agent_core import run_agent_loop,CODING_SYSTEM_PROMPT
-    from planner import generate_plan
+    from Agent.agent_core import run_agent_loop,CODING_SYSTEM_PROMPT
+    from Agent.planner import generate_plan
     import sys
-    from verifier import verify_and_iterate
+    from Agent.verifier import verify_and_iterate
     from audit import log_step, render_audit_markdown
     import uuid
 

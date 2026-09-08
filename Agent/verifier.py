@@ -1,5 +1,5 @@
-from agent_core import run_agent_loop,CODING_SYSTEM_PROMPT
-from sandbox import run_sandbox
+from Agent.agent_core import run_agent_loop,CODING_SYSTEM_PROMPT
+from Agent.sandbox import run_sandbox
 
 def verify_and_iterate(test_command:list,maxretires:int=3,on_step=None)->dict:
     for attempt in range(maxretires):
