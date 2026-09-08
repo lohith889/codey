@@ -1,23 +1,47 @@
 import subprocess
 from pathlib import Path
+from typing import List, Dict
 
-ROOT_PATH=Path('./workspace').resolve()
+ROOT_PATH = Path('./workspace').resolve()
 
-def run_sandbox(command:list,timeout:int = 30)->dict:
+
+def run_sandbox(command: List[str], timeout: int = 30) -> Dict:
+    """Execute a command in a sandboxed environment with proper error handling."""
     try:
-        result=subprocess.run(
+        result = subprocess.run(
             command,
             cwd=ROOT_PATH,
-            capture_output=Ture,
+            capture_output=True,
             text=True,
             timeout=timeout,
+            check=False,
         )
 
-        return{
-            "stdout":result.stdout[-4000:],
-            "stderr":result.stderr[-4000:],
-            "exit_code":result.returncode,
+        return {
+            "stdout": result.stdout[-4000:] if result.stdout else "",
+            "stderr": result.stderr[-4000:] if result.stderr else "",
+            "exit_code": result.returncode,
+            "command": " ".join(command),
         }
 
-    except:
-        return {"stdout":"","stderr":f'Command time out after {timeout}s',"exit_code":-1}
+    except subprocess.TimeoutExpired:
+        return {
+            "stdout": "",
+            "stderr": f"Command timed out after {timeout}s",
+            "exit_code": -1,
+            "command": " ".join(command),
+        }
+    except FileNotFoundError as e:
+        return {
+            "stdout": "",
+            "stderr": f"Command not found: {e.filename}",
+            "exit_code": -2,
+            "command": " ".join(command),
+        }
+    except Exception as e:
+        return {
+            "stdout": "",
+            "stderr": f"Execution error: {str(e)}",
+            "exit_code": -3,
+            "command": " ".join(command),
+        }
