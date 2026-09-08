@@ -7,11 +7,22 @@ authors = [
     { name = "lohith889", email = "lohith.24ad@kct.ac.in" }
 ]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "pytest>=8.0.0",
+]
 
 [project.scripts]
-codey = "codey:main"
+codey = "Agent.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
