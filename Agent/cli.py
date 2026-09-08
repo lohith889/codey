@@ -1,22 +1,23 @@
-
 import json
+import os
 import shlex
 import sys
 import uuid
 
-from Agent.agent_core import CODING_SYSTEM_PROMPT, run_agent_loop
-from Agent.audit import log_step, render_audit_markdown
-from Agent.planner import generate_plan
-from Agent.verifier import verify_and_iterate
+from agent_core import CODING_SYSTEM_PROMPT, run_agent_loop
+from audit import log_step, render_audit_markdown
+from planner import generate_plan
+from verifier import verify_and_iterate
+import ui
 
 
 def run_cli_step() -> bool:
     """Run a single interaction step. Returns False if the session should terminate."""
-    task = input("\nTask: ").strip()
+    task = input(f"\n{ui.Colors.BOLD}{ui.Colors.CYAN}Task > {ui.Colors.RESET}").strip()
     if not task:
         return True
     if task.lower() in ("exit", "quit"):
-        print("Exiting.")
+        ui.info("Exiting session.")
         return False
 
     session_id = uuid.uuid4().hex[:8]
@@ -25,27 +26,26 @@ def run_cli_step() -> bool:
         log_step(session_id, tool_name, tool_args, result)
 
     if task.lower() == "/test":
-        test_cmd_str = input("Test command to verify (blank to skip): ").strip()
+        test_cmd_str = input(f"{ui.Colors.YELLOW}Test command to verify (blank to skip): {ui.Colors.RESET}").strip()
         if test_cmd_str:
             cmd_list = shlex.split(test_cmd_str)
             outcome = verify_and_iterate(cmd_list, on_step=on_step)
-            print(f"\nVerification result: {outcome}")
+            ui.info(f"Verification result: {outcome}")
         return True
 
-    print("\nSTRUCTURING PLAN...\n")
+    ui.section("PLANNING")
+    ui.info("Generating structured execution plan...")
     try:
         plan = generate_plan(task)
     except Exception as exc:
-        print(f"Error generating plan: {exc}")
+        ui.error(f"Error generating plan: {exc}")
         return True
 
-    for step in plan.get("steps", []):
-        files = ", ".join(step.get("files_touched", []))
-        print(f"{step.get('id', '')}. {step.get('description', '')} ({files})")
+    ui.print_plan(plan.get("steps", []))
 
-    choice = input("\nApprove plan [y/n]: ").strip().lower()
+    choice = input(f"{ui.Colors.BOLD}{ui.Colors.YELLOW}Approve plan [y/n]: {ui.Colors.RESET}").strip().lower()
     if choice != "y":
-        print("Plan rejected. Task cancelled.")
+        ui.warning("Plan rejected. Task cancelled.")
         return True
 
     prompt = CODING_SYSTEM_PROMPT + f"""
@@ -55,24 +55,28 @@ PLAN:
 
 Follow the plan to complete the task.
 """
-    print(f"\n[SESSION] Started session: {session_id}")
+    ui.section(f"EXECUTION | Session: {session_id}")
     try:
         run_agent_loop(task, prompt, on_step=on_step)
+        ui.success(f"Session {session_id} finished.")
     except Exception as exc:
-        print(f"Agent error: {exc}")
+        ui.error(f"Agent error: {exc}")
 
-    print(f"\n[AUDIT] Session log saved to audit_logs/{session_id}.jsonl")
+    ui.info(f"Session log saved to audit_logs/{session_id}.jsonl")
     return True
 
 
 def main() -> None:
+    model = os.getenv("MODEL_NAME", "openai/gpt-oss-20b")
+    ui.banner(model=model, workspace="workspace/")
     while True:
         try:
             should_continue = run_cli_step()
             if not should_continue:
                 break
         except (KeyboardInterrupt, EOFError):
-            print("\nSession interrupted. Exiting.")
+            print()
+            ui.info("Session interrupted. Exiting.")
             break
 
 

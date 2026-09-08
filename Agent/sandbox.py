@@ -1,17 +1,26 @@
+import platform
 import subprocess
 from pathlib import Path
 
 ROOT_PATH = (Path(__file__).resolve().parent.parent / "workspace").resolve()
 ROOT_PATH.mkdir(exist_ok=True)
 
-def run_sandbox(command: list, timeout: int = 30) -> dict:
+def run_sandbox(command: list | str, timeout: int = 30) -> dict:
+    is_windows = platform.system() == "Windows"
+
+    if isinstance(command, list):
+        cmd = subprocess.list2cmdline(command) if is_windows else command
+    else:
+        cmd = command
+
     try:
         result = subprocess.run(
-            command,
+            cmd,
             cwd=ROOT_PATH,
             capture_output=True,
             text=True,
             timeout=timeout,
+            shell=is_windows,
         )
 
         return {

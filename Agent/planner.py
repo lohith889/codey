@@ -1,7 +1,8 @@
 import json
 import os
 from dotenv import load_dotenv
-from Agent.agent_core import get_client
+from agent_core import get_client
+import ui
 
 load_dotenv()
 
@@ -85,7 +86,7 @@ def generate_plan(task: str, max_retries: int = 3) -> dict:
 
         except Exception as exc:
             last_error = exc
-            print(f"[PLANNER] Attempt {attempt}/{max_retries} failed: {exc}")
+            ui.warning(f"Plan generation attempt {attempt}/{max_retries} failed: {exc}")
             if attempt < max_retries:
                 messages.append({
                     "role": "user",

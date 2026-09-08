@@ -1,8 +1,18 @@
-from Agent.tools import read_file, write_file, edit_file, list_dir, run_command
-from openai import OpenAI
+from tools import (
+    read_file,
+    write_file,
+    replace_edit,
+    insert_content,
+    edit_file,
+    list_dir,
+    run_command,
+)
+from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
 import os
 import json
+import time
+import ui
 
 
 load_dotenv()
@@ -20,27 +30,69 @@ CODING_SYSTEM_PROMPT = """
 You are a careful coding agent working inside a project directory.
 
 RULES:
-- You have access to tools: read_file, write_file, edit_file, list_dir, run_command
+- You have access to tools: read_file, write_file, replace_edit, insert_content, list_dir, run_command
 - Use these tools to interact with files and verify code execution
-- Do NOT generate code in your response - use write_file instead
+- Do NOT generate code in your response - use write_file, replace_edit, or insert_content instead
 - Use run_command to run scripts, execute tests, or check code inside the workspace
-- For write_file, provide path and content as JSON
-- For edit_file, provide path, old_str, and new_str
-- For read_file, provide path only
-- Once task is over stop tool calling
+- Once task is complete, stop tool calling and provide a final summary
 
-TOOL CALL FORMAT:
-When using a tool, provide the arguments in valid JSON format.
-Example: write_file({"path": "hello.py", "content": "print('Hello')"})
+CRITICAL TOOL CALL FORMAT:
+When calling a tool, your response MUST follow this exact JSON structure:
+
+{
+  "name": "tool_name",
+  "arguments": "{\"param1\": \"value1\", \"param2\": \"value2\"}"
+}
+
+IMPORTANT RULES FOR TOOL CALLS:
+1. "arguments" MUST be a JSON STRING (not an object)
+2. The arguments string MUST use DOUBLE QUOTES for all keys and string values
+3. Content with newlines MUST use \\n for line breaks
+4. Content with quotes MUST escape them as \\"
+5. Do NOT use single quotes in the arguments JSON
+
+EXAMPLES:
+CORRECT:
+write_file({"path": "hello.py", "content": "print('Hello')"})
+write_file({"path": "app.tsx", "content": "import React from 'react';\\n\\nconst App = () => <div>Hello</div>;"})
+
+TOOL-SPECIFIC FORMATS:
+
+1. read_file:
+   {"name": "read_file", "arguments": "{\"path\": \"src/file.txt\"}"}
+
+2. write_file:
+   {"name": "write_file", "arguments": "{\"path\": \"src/file.txt\", \"content\": \"Your content here with \\\\n for newlines\"}"}
+
+3. replace_edit:
+   {"name": "replace_edit", "arguments": "{\"path\": \"src/file.txt\", \"old_str\": \"old text\", \"new_str\": \"new text\"}"}
+
+4. insert_content:
+   {"name": "insert_content", "arguments": "{\"path\": \"src/file.txt\", \"content\": \"new content\", \"target\": \"anchor text\", \"position\": \"after\"}"}
+
+5. list_dir:
+   {"name": "list_dir", "arguments": "{\"path\": \"src\"}"}
+
+6. run_command:
+   {"name": "run_command", "arguments": "{\"command\": \"npm test\"}"}
+
+GUIDELINES FOR MULTI-LINE CONTENT:
+When writing code with multiple lines:
+- Use \\n for each newline
+- Escape any double quotes inside the content as \\"
+- For template literals with backticks, use single quotes or escape backticks
+
+Example:
+write_file({"path": "store.ts", "content": "import create from \\'zustand\\';\\n\\nexport interface State {\\n  count: number;\\n}\\n\\nconst useStore = create<State>(() => ({\\n  count: 0,\\n}));"})
 
 RESPONSE FORMAT:
-- If you need to explain something, do it in the content field
-- Then use the tool calls to actually do the work
-- Never output raw code unless it's inside a tool call
+- If you need to explain something, provide it in the content field
+- Then immediately use the tool call to do the work
+- Never output raw code outside of tool calls
+- After making changes, verify by reading the file
 
 Always verify your changes by reading the file after editing.
 """
-
 
 TOOLS = [
     {
@@ -75,16 +127,37 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "edit_file",
-            "description": "Replace one exact string in a file.",
+            "name": "replace_edit",
+            "description": "Replace an exact string or multi-line block in a file.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string"},
-                    "old_str": {"type": "string"},
-                    "new_str": {"type": "string"}
+                    "path": {"type": "string", "description": "Relative path to the file."},
+                    "old_str": {"type": "string", "description": "The exact text or multi-line block to replace. Must match exactly."},
+                    "new_str": {"type": "string", "description": "The new replacement text or multi-line block."}
                 },
                 "required": ["path", "old_str", "new_str"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "insert_content",
+            "description": "Append before or append after a target string/anchor in a file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Relative path to the file."},
+                    "content": {"type": "string", "description": "The text or code to insert."},
+                    "target": {"type": "string", "description": "The anchor string to search for. If omitted, appends to EOF or prepends to top of file."},
+                    "position": {
+                        "type": "string",
+                        "enum": ["before", "after"],
+                        "description": "Whether to insert 'before' or 'after' the target anchor. Defaults to 'after'."
+                    }
+                },
+                "required": ["path", "content"]
             }
         }
     },
@@ -123,7 +196,16 @@ TOOLS = [
 TOOL_FUNCTIONS = {
     "read_file": lambda args: read_file(args["path"]),
     "write_file": lambda args: write_file(args["path"], args["content"]),
-    "edit_file": lambda args: edit_file(
+    "replace_edit": lambda args: replace_edit(
+        args["path"], args["old_str"], args["new_str"]
+    ),
+    "insert_content": lambda args: insert_content(
+        args["path"],
+        args["content"],
+        target=args.get("target"),
+        position=args.get("position", "after"),
+    ),
+    "edit_file": lambda args: replace_edit(
         args["path"], args["old_str"], args["new_str"]
     ),
     "list_dir": lambda args: list_dir(args.get("path", ".")),
@@ -181,19 +263,28 @@ def run_agent_loop(
     ]
 
     for iteration in range(max_iter):
-        print("THINKING...\n")
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            tools=TOOLS,
-            tool_choice="auto",
-        )
+        ui.thinking(iteration + 1, max_iter)
+
+        for attempt in range(5):
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    tools=TOOLS,
+                    tool_choice="auto",
+                )
+                break
+            except RateLimitError as err:
+                if attempt == 4:
+                    raise
+                wait_sec = 2.0 * (attempt + 1)
+                ui.warning(f"Rate limit reached (429). Retrying in {wait_sec:.1f}s...")
+                time.sleep(wait_sec)
 
         message = response.choices[0].message
 
         if not message.tool_calls:
-            print("\nAssistant:\n")
-            print(message.content)
+            ui.assistant_response(message.content or "(Task complete)")
             return message.content or ""
 
         messages.append({
@@ -214,7 +305,6 @@ def run_agent_loop(
 
         for tool_call in message.tool_calls:
             tool_name = tool_call.function.name
-            print(f"\n[TOOL] {tool_name}")
 
             try:
                 args = json.loads(tool_call.function.arguments)
@@ -229,6 +319,9 @@ def run_agent_loop(
                         result = TOOL_FUNCTIONS[tool_name](args)
                 except Exception as exc:
                     result = f"ERROR: {exc}"
+
+            ui.tool_call(tool_name, args)
+            ui.tool_result(result)
 
             if on_step and args is not None:
                 on_step(tool_name, args, result)
