@@ -1,0 +1,33 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": null,
+  "phases": [
+    {
+      "number": "1",
+      "name": "Foundation & Test Infrastructure",
+      "status": "complete"
+    },
+    {
+      "number": "2",
+      "name": "Interactive Plan Editing",
+      "status": "in_progress"
+    },
+    {
+      "number": "3",
+      "name": "Multi-File Diff Staging & Review",
+      "status": "pending"
+    },
+    {
+      "number": "4",
+      "name": "Real-Time Streaming Output",
+      "status": "pending"
+    }
+  ],
+  "next": {
+    "command": "/gsd-progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
+  },
+  "updated_at": "2026-09-09T17:20:15.276Z"
+}
