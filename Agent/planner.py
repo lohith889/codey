@@ -1,8 +1,12 @@
 import json
 import os
 from dotenv import load_dotenv
-from agent_core import get_client
-import ui
+try:
+    from Agent.agent_core import get_client
+    from Agent import ui
+except ImportError:
+    from agent_core import get_client
+    import ui
 
 load_dotenv()
 

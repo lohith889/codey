@@ -1,6 +1,10 @@
 import shlex
-from agent_core import CODING_SYSTEM_PROMPT, run_agent_loop
-from sandbox import run_sandbox
+try:
+    from Agent.agent_core import CODING_SYSTEM_PROMPT, run_agent_loop
+    from Agent.sandbox import run_sandbox
+except ImportError:
+    from agent_core import CODING_SYSTEM_PROMPT, run_agent_loop
+    from sandbox import run_sandbox
 
 
 def verify_and_iterate(

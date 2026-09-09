@@ -1,18 +1,30 @@
-from tools import (
-    read_file,
-    write_file,
-    replace_edit,
-    insert_content,
-    edit_file,
-    list_dir,
-    run_command,
-)
+try:
+    from Agent.tools import (
+        read_file,
+        write_file,
+        replace_edit,
+        insert_content,
+        edit_file,
+        list_dir,
+        run_command,
+    )
+    from Agent import ui
+except ImportError:
+    from tools import (
+        read_file,
+        write_file,
+        replace_edit,
+        insert_content,
+        edit_file,
+        list_dir,
+        run_command,
+    )
+    import ui
 from openai import OpenAI, RateLimitError
 from dotenv import load_dotenv
 import os
 import json
 import time
-import ui
 
 
 load_dotenv()

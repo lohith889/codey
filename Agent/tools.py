@@ -1,7 +1,10 @@
 import difflib
 from pathlib import Path
 import shlex
-from sandbox import run_sandbox
+try:
+    from Agent.sandbox import run_sandbox
+except ImportError:
+    from sandbox import run_sandbox
 
 ROOT_PATH = (Path(__file__).resolve().parent.parent / "workspace").resolve()
 ROOT_PATH.mkdir(exist_ok=True)

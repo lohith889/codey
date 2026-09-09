@@ -4,11 +4,18 @@ import shlex
 import sys
 import uuid
 
-from agent_core import CODING_SYSTEM_PROMPT, run_agent_loop
-from audit import log_step, render_audit_markdown
-from planner import generate_plan
-from verifier import verify_and_iterate
-import ui
+try:
+    from Agent.agent_core import CODING_SYSTEM_PROMPT, run_agent_loop
+    from Agent.audit import log_step, render_audit_markdown
+    from Agent.planner import generate_plan
+    from Agent.verifier import verify_and_iterate
+    from Agent import ui
+except ImportError:
+    from agent_core import CODING_SYSTEM_PROMPT, run_agent_loop
+    from audit import log_step, render_audit_markdown
+    from planner import generate_plan
+    from verifier import verify_and_iterate
+    import ui
 
 
 def run_cli_step() -> bool:
