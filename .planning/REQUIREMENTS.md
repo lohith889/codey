@@ -9,8 +9,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Foundation & Packaging
 
-- [ ] **FOUND-01**: User can run `codey` as an installed package without `ModuleNotFoundError` by refactoring unqualified imports in `Agent/` and adding `Agent/__init__.py`
-- [ ] **FOUND-02**: Developer can run `pytest` with a passing baseline test suite covering `Agent/tools.py`, `Agent/sandbox.py`, and `Agent/agent_core.py`
+- [x] **FOUND-01**: User can run `codey` as an installed package without `ModuleNotFoundError` by refactoring unqualified imports in `Agent/` and adding `Agent/__init__.py`
+- [x] **FOUND-02**: Developer can run `pytest` with a passing baseline test suite covering `Agent/tools.py`, `Agent/sandbox.py`, and `Agent/agent_core.py`
 
 ### Interactive Plan Editing
 
@@ -57,8 +57,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Pending |
-| FOUND-02 | Phase 1 | Pending |
+| FOUND-01 | Phase 1 | Complete |
+| FOUND-02 | Phase 1 | Complete |
 | PLAN-01 | Phase 2 | Pending |
 | PLAN-02 | Phase 2 | Pending |
 | DIFF-01 | Phase 3 | Pending |
@@ -67,6 +67,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STREAM-02 | Phase 4 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 8 total
 - Mapped to phases: 8
 - Unmapped: 0
